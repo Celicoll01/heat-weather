@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>체감온도 그래프</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #f6f7fb;
+      --card: #ffffff;
+      --text: #172033;
+      --muted: #657084;
+      --line: #e6e9f0;
+      --primary: #2563eb;
+      --danger: #dc2626;
+      --warn: #f59e0b;
+      --safe: #16a34a;
+      --shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+      --radius: 22px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .wrap {
+      width: min(1120px, 100%);
+      margin: 0 auto;
+      padding: 18px 14px 32px;
+    }
+    .hero {
+      background: linear-gradient(135deg, #1d4ed8, #0f172a);
+      color: #fff;
+      border-radius: 28px;
+      padding: 24px 22px;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+    }
+    .hero h1 {
+      margin: 0;
+      font-size: clamp(25px, 5.2vw, 44px);
+      font-weight: 850;
+      line-height: 1.18;
+      letter-spacing: -0.03em;
+    }
+    .hero p {
+      margin: 10px 0 0;
+      color: rgba(255, 255, 255, 0.82);
+      font-size: clamp(14px, 2.6vw, 18px);
+      line-height: 1.6;
+    }
+    .status-row {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+    .metric .label {
+      font-size: 14px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+    .metric .value {
+      margin-top: 8px;
+      font-size: clamp(28px, 6vw, 48px);
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      white-space: nowrap;
+    }
+    .metric .sub {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .chart-card {
+      padding: 18px 18px 10px;
+    }
+    .chart-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .chart-head h2 {
+      margin: 0;
+      font-size: clamp(20px, 4vw, 30px);
+      letter-spacing: -0.03em;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-weight: 850;
+      font-size: 13px;
+      white-space: nowrap;
+      background: #e0f2fe;
+      color: #075985;
+    }
+    .chart-wrap {
+      height: min(62vh, 520px);
+      min-height: 320px;
+      position: relative;
+    }
+    .notice {
+      margin-top: 14px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      color: #7c2d12;
+      line-height: 1.65;
+      font-size: 14px;
+    }
+    .error {
+      display: none;
+      margin-top: 14px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #7f1d1d;
+      line-height: 1.65;
+      font-size: 14px;
+      white-space: pre-wrap;
+    }
+    .footer {
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.65;
+      padding: 0 2px;
+    }
+    .setup {
+      margin-top: 16px;
+      display: none;
+    }
+    .setup summary {
+      cursor: pointer;
+      font-weight: 800;
+      color: #1d4ed8;
+      margin-bottom: 12px;
+    }
+    .setup-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .setup label {
+      display: grid;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+    .setup input {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 14px;
+      color: var(--text);
+    }
+    .btns {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    button {
+      border: 0;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-weight: 850;
+      background: #1d4ed8;
+      color: #fff;
+      cursor: pointer;
+    }
+    button.secondary { background: #475569; }
+    @media (max-width: 860px) {
+      .status-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .setup-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 520px) {
+      .status-row { grid-template-columns: 1fr; }
+      .hero { padding: 22px 18px; }
+      .card { padding: 16px; }
+      .chart-head { display: block; }
+      .pill { margin-top: 10px; }
+      .chart-wrap { min-height: 300px; height: 420px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="hero">
+      <h1 id="pageTitle">체감온도 그래프</h1>
+      <p id="siteDesc">기상청 초단기실황·초단기예보 기반으로 현재 기온과 체감온도를 표시합니다.</p>
+    </section>
+
+    <section class="status-row">
+      <article class="card metric">
+        <div class="label">현재 기온</div>
+        <div class="value" id="tempNow">--℃</div>
+        <div class="sub" id="tempSub">기상청 초단기실황 T1H</div>
+      </article>
+      <article class="card metric">
+        <div class="label">현재 체감온도</div>
+        <div class="value" id="feelNow">--℃</div>
+        <div class="sub">기온·상대습도 기반 산출</div>
+      </article>
+      <article class="card metric">
+        <div class="label">상대습도</div>
+        <div class="value" id="humNow">--%</div>
+        <div class="sub">기상청 초단기실황 REH</div>
+      </article>
+      <article class="card metric">
+        <div class="label">현장관리 등급</div>
+        <div class="value" id="riskNow">--</div>
+        <div class="sub" id="riskSub">체감온도 기준 예시</div>
+      </article>
+    </section>
+
+    <section class="card chart-card">
+      <div class="chart-head">
+        <h2 id="chartTitle">체감온도 그래프</h2>
+        <span class="pill" id="updatedAt">갱신 대기</span>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="weatherChart"></canvas>
+      </div>
+      <div class="notice" id="notice">
+        ※ 기상청 격자 대표값 기준입니다. 갱폼·철근·슬래브·옥상 등 복사열이 강한 작업구간은 실제 체감 위험이 더 높을 수 있으므로 현장 WBGT 또는 온습도계 실측값과 병행 확인하세요.
+      </div>
+      <div class="error" id="errorBox"></div>
+    </section>
+
+    <details class="card setup" id="setupBox">
+      <summary>초기 설정 열기</summary>
+      <div class="setup-grid">
+        <label>공공데이터포털 기상청 API 인증키(Encoding)
+          <input id="serviceKeyInput" placeholder="예: abcDEF...%2F..." />
+        </label>
+        <label>현장명
+          <input id="siteNameInput" placeholder="예: ○○건설 현장" />
+        </label>
+        <label>격자 X(nx)
+          <input id="nxInput" placeholder="예: 60" />
+        </label>
+        <label>격자 Y(ny)
+          <input id="nyInput" placeholder="예: 121" />
+        </label>
+      </div>
+      <div class="btns">
+        <button onclick="saveSettings()">이 브라우저에 저장</button>
+        <button class="secondary" onclick="clearSettings()">저장값 삭제</button>
+        <button class="secondary" onclick="loadWeather()">다시 불러오기</button>
+      </div>
+    </details>
+
+    <p class="footer" id="footerText">
+      자료: 기상청 단기예보 조회서비스. 제목 형식: 해당 날짜_시간_체감온도 그래프. 자동 새로고침: 10분 간격.
+    </p>
+  </main>
+
+  <script>
+    /*
+      QR 게시 전 반드시 아래 CONFIG를 수정하세요.
+      1) SERVICE_KEY: 공공데이터포털 > 기상청_단기예보 조회서비스 > 일반 인증키(Encoding)
+      2) SITE_NAME: 현장명
+      3) DEFAULT_NX / DEFAULT_NY: 현장 위치의 기상청 격자 좌표
+
+      브라우저에서 직접 공공데이터포털 API를 호출할 때 CORS가 발생하는 환경이 있습니다.
+      그 경우에는 Vercel/Netlify/Cloudflare Worker 등 간단한 프록시를 거쳐 호출해야 합니다.
+    */
+    const CONFIG = {
+      SERVICE_KEY: "c571f061af3d62a72fc40b09658657c8943a1402007d57ff8fa28dfb5a90c467",
+      SITE_NAME: "의왕청계2  A-1BL 아파트 건설공사 1공구",
+      DEFAULT_NX: 60,
+      DEFAULT_NY: 121,
+      AUTO_REFRESH_MINUTES: 10,
+
+
+
+      SHOW_SETUP_WHEN_KEY_EMPTY: true
+    };
+
+    const API_BASE = "https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0";
+    let chart;
+
+    function pad(n) { return String(n).padStart(2, "0"); }
+    function ymd(d) { return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`; }
+    function ymdDash(d) { return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; }
+    function hm(d) { return `${pad(d.getHours())}${pad(d.getMinutes())}`; }
+    function hLabelFromHHMM(hhmm) { return `${Number(String(hhmm).slice(0, 2))}시`; }
+    function round1(v) { return Math.round(Number(v) * 10) / 10; }
+    function isPlaceholderKey(key) { return !key || key.includes("여기에_") || key.length < 20; }
+
+    function getSetting(name, fallback) {
+      const qs = new URLSearchParams(location.search);
+      if (qs.has(name)) return qs.get(name);
+      const saved = localStorage.getItem(`kma_${name}`);
+      return saved || fallback;
+    }
+
+    function currentConfig() {
+      return {
+        serviceKey: getSetting("serviceKey", CONFIG.SERVICE_KEY),
+        siteName: getSetting("siteName", CONFIG.SITE_NAME),
+        nx: Number(getSetting("nx", CONFIG.DEFAULT_NX)),
+        ny: Number(getSetting("ny", CONFIG.DEFAULT_NY))
+      };
+    }
+
+    function updateTitle(now) {
+      const cfg = currentConfig();
+      const title = `${ymdDash(now)}_${pad(now.getHours())}시_${pad(now.getMinutes())}분_체감온도 그래프`;
+      document.title = title;
+      document.getElementById("pageTitle").textContent = title;
+      document.getElementById("chartTitle").textContent = title;
+      document.getElementById("siteDesc").textContent = `${cfg.siteName} · 기상청 격자좌표 nx=${cfg.nx}, ny=${cfg.ny}`;
+    }
+
+    function getBaseTime(delayMinutes, intervalMinutes) {
+      const d = new Date(Date.now() - delayMinutes * 60 * 1000);
+      const roundedMinute = Math.floor(d.getMinutes() / intervalMinutes) * intervalMinutes;
+      d.setMinutes(roundedMinute, 0, 0);
+      return { base_date: ymd(d), base_time: hm(d) };
+    }
+
+    async function fetchKma(endpoint, params) {
+      const cfg = currentConfig();
+      const key = cfg.serviceKey;
+      const query = new URLSearchParams({
+        pageNo: "1",
+        numOfRows: "1000",
+        dataType: "JSON",
+        ...params
+      });
+      const url = `${API_BASE}/${endpoint}?serviceKey=${key}&${query.toString()}`;
+      const res = await fetch(url, { method: "GET" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const header = data?.response?.header;
+      if (header && header.resultCode !== "00") {
+        throw new Error(`${header.resultCode}: ${header.resultMsg || "기상청 API 응답 오류"}`);
+      }
+      const items = data?.response?.body?.items?.item;
+      if (!items || !items.length) throw new Error("기상청 응답에 데이터가 없습니다. base_time 또는 격자좌표를 확인하세요.");
+      return items;
+    }
+
+    function groupUltraShortForecast(items) {
+      const grouped = new Map();
+      for (const it of items) {
+        const key = `${it.fcstDate}${it.fcstTime}`;
+        if (!grouped.has(key)) grouped.set(key, { date: it.fcstDate, time: it.fcstTime });
+        const row = grouped.get(key);
+        if (it.category === "T1H") row.temperature = Number(it.fcstValue);
+        if (it.category === "REH") row.humidity = Number(it.fcstValue);
+        if (it.category === "WSD") row.wind = Number(it.fcstValue);
+      }
+      return [...grouped.values()]
+        .filter(row => Number.isFinite(row.temperature) && Number.isFinite(row.humidity))
+        .sort((a, b) => `${a.date}${a.time}`.localeCompare(`${b.date}${b.time}`));
+    }
+
+    function parseNow(items) {
+      const map = {};
+      for (const it of items) map[it.category] = it.obsrValue;
+      return {
+        temperature: Number(map.T1H),
+        humidity: Number(map.REH),
+        wind: Number(map.WSD),
+        rain: map.RN1,
+        pty: map.PTY
+      };
+    }
+
+    // 기상청 여름철 체감온도 산출식(2022.6.2. 이후): Ta=기온, RH=상대습도, Tw=Stull 추정 습구온도
+    function wetBulbStull(ta, rh) {
+      return ta * Math.atan(0.151977 * Math.sqrt(rh + 8.313659))
+        + Math.atan(ta + rh)
+        - Math.atan(rh - 1.676331)
+        + 0.00391838 * Math.pow(rh, 1.5) * Math.atan(0.023101 * rh)
+        - 4.686035;
+    }
+
+    function summerFeelsLike(ta, rh) {
+      if (!Number.isFinite(ta) || !Number.isFinite(rh)) return null;
+      const tw = wetBulbStull(ta, rh);
+      const feel = -0.2442 + 0.55399 * tw + 0.45535 * ta - 0.0022 * Math.pow(tw, 2) + 0.00278 * tw * ta + 3.0;
+      return round1(feel);
+    }
+
+    function riskLevel(feels) {
+      if (!Number.isFinite(feels)) return { text: "--", color: "#64748b", sub: "계산 대기" };
+      if (feels >= 38) return { text: "위험", color: "#dc2626", sub: "작업중지·강화관리 검토" };
+      if (feels >= 35) return { text: "경고", color: "#ea580c", sub: "휴식·수분·감시 강화" };
+      if (feels >= 33) return { text: "주의", color: "#f59e0b", sub: "옥외작업자 상태 확인" };
+      if (feels >= 31) return { text: "관심", color: "#16a34a", sub: "정기 수분섭취 안내" };
+      return { text: "보통", color: "#2563eb", sub: "기본 폭염관리 유지" };
+    }
+
+    function updateCards(nowRow) {
+      const feel = summerFeelsLike(nowRow.temperature, nowRow.humidity);
+      const risk = riskLevel(feel);
+      document.getElementById("tempNow").textContent = Number.isFinite(nowRow.temperature) ? `${round1(nowRow.temperature)}℃` : "--℃";
+      document.getElementById("feelNow").textContent = Number.isFinite(feel) ? `${feel}℃` : "--℃";
+      document.getElementById("humNow").textContent = Number.isFinite(nowRow.humidity) ? `${round1(nowRow.humidity)}%` : "--%";
+      const riskEl = document.getElementById("riskNow");
+      riskEl.textContent = risk.text;
+      riskEl.style.color = risk.color;
+      document.getElementById("riskSub").textContent = risk.sub;
+    }
+
+    function drawChart(rows) {
+      const labels = rows.map(r => r.label);
+      const temps = rows.map(r => r.temperature);
+      const feels = rows.map(r => r.feelsLike);
+      const ctx = document.getElementById("weatherChart");
+      if (chart) chart.destroy();
+      chart = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels,
+          datasets: [
+            {
+              label: "기온(℃)",
+              data: temps,
+              borderWidth: 3,
+              pointRadius: 4,
+              tension: 0.35
+            },
+            {
+              label: "체감온도(℃)",
+              data: feels,
+              borderWidth: 3,
+              pointRadius: 4,
+              tension: 0.35
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: "index", intersect: false },
+          plugins: {
+            legend: { labels: { font: { size: 14, weight: "bold" } } },
+            tooltip: {
+              callbacks: {
+                label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y}℃`
+              }
+            }
+          },
+          scales: {
+            x: { ticks: { font: { size: 13, weight: "bold" } }, grid: { display: false } },
+            y: {
+              ticks: { callback: value => `${value}℃`, font: { size: 13 } },
+              title: { display: true, text: "온도(℃)", font: { size: 13, weight: "bold" } }
+            }
+          }
+        }
+      });
+    }
+
+    function showError(message) {
+      const box = document.getElementById("errorBox");
+      box.style.display = "block";
+      box.textContent = message;
+    }
+
+    function clearError() {
+      const box = document.getElementById("errorBox");
+      box.style.display = "none";
+      box.textContent = "";
+    }
+
+    function demoRows() {
+      const now = new Date();
+      const base = new Date(now);
+      base.setMinutes(0, 0, 0);
+      const rows = [];
+      const vals = [29.1, 30.4, 31.6, 32.8, 33.5, 34.1, 33.7];
+      const hums = [72, 69, 66, 64, 62, 60, 61];
+      for (let i = -3; i <= 3; i++) {
+        const d = new Date(base.getTime() + i * 60 * 60 * 1000);
+        const idx = i + 3;
+        rows.push({
+          label: i === 0 ? `현재 ${d.getHours()}시` : `${d.getHours()}시`,
+          temperature: vals[idx],
+          humidity: hums[idx],
+          feelsLike: summerFeelsLike(vals[idx], hums[idx])
+        });
+      }
+      return rows;
+    }
+
+    async function loadWeather() {
+      const now = new Date();
+      updateTitle(now);
+      clearError();
+      const cfg = currentConfig();
+
+      if (isPlaceholderKey(cfg.serviceKey)) {
+        document.getElementById("setupBox").style.display = CONFIG.SHOW_SETUP_WHEN_KEY_EMPTY ? "block" : "none";
+        const rows = demoRows();
+        updateCards(rows.find(r => r.label.startsWith("현재")) || rows[0]);
+        drawChart(rows);
+        document.getElementById("updatedAt").textContent = "예시 데이터 표시 중";
+        showError("API 인증키가 입력되지 않아 예시 데이터로 표시 중입니다. QR 게시 전 HTML 상단 CONFIG.SERVICE_KEY에 공공데이터포털 기상청 API 인증키(Encoding)를 넣어주세요.");
+        return;
+      }
+
+      try {
+        const ncstBase = getBaseTime(45, 60);
+        const fcstBase = getBaseTime(45, 30);
+
+        const [ncstItems, fcstItems] = await Promise.all([
+          fetchKma("getUltraSrtNcst", { base_date: ncstBase.base_date, base_time: ncstBase.base_time, nx: cfg.nx, ny: cfg.ny }),
+          fetchKma("getUltraSrtFcst", { base_date: fcstBase.base_date, base_time: fcstBase.base_time, nx: cfg.nx, ny: cfg.ny })
+        ]);
+
+        const current = parseNow(ncstItems);
+        const currentFeel = summerFeelsLike(current.temperature, current.humidity);
+        updateCards(current);
+
+        const forecastRows = groupUltraShortForecast(fcstItems).slice(0, 6).map(row => ({
+          label: hLabelFromHHMM(row.time),
+          temperature: round1(row.temperature),
+          humidity: row.humidity,
+          feelsLike: summerFeelsLike(row.temperature, row.humidity)
+        }));
+
+        const chartRows = [
+          { label: `현재 ${now.getHours()}시`, temperature: round1(current.temperature), humidity: current.humidity, feelsLike: currentFeel },
+          ...forecastRows
+        ];
+
+        drawChart(chartRows);
+        document.getElementById("updatedAt").textContent = `최근 갱신 ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+        document.getElementById("setupBox").style.display = "none";
+      } catch (err) {
+        const rows = demoRows();
+        updateCards(rows.find(r => r.label.startsWith("현재")) || rows[0]);
+        drawChart(rows);
+        document.getElementById("updatedAt").textContent = "API 호출 실패";
+        document.getElementById("setupBox").style.display = "block";
+        showError(
+          "기상청 API 호출에 실패하여 예시 그래프로 표시합니다.\n\n" +
+          "확인사항\n" +
+          "1) CONFIG.SERVICE_KEY에 Encoding 인증키를 넣었는지 확인\n" +
+          "2) nx, ny 격자좌표가 현장 위치와 맞는지 확인\n" +
+          "3) 공공데이터포털 활용신청 승인 여부 확인\n" +
+          "4) 브라우저 CORS 오류가 나면 Vercel/Netlify/Cloudflare Worker 같은 프록시 서버를 경유해야 함\n\n" +
+          `오류 내용: ${err.message || err}`
+        );
+      }
+    }
+
+    function saveSettings() {
+      const key = document.getElementById("serviceKeyInput").value.trim();
+      const site = document.getElementById("siteNameInput").value.trim();
+      const nx = document.getElementById("nxInput").value.trim();
+      const ny = document.getElementById("nyInput").value.trim();
+      if (key) localStorage.setItem("kma_serviceKey", key);
+      if (site) localStorage.setItem("kma_siteName", site);
+      if (nx) localStorage.setItem("kma_nx", nx);
+      if (ny) localStorage.setItem("kma_ny", ny);
+      loadWeather();
+    }
+
+    function clearSettings() {
+      ["serviceKey", "siteName", "nx", "ny"].forEach(k => localStorage.removeItem(`kma_${k}`));
+      loadWeather();
+    }
+
+    function initInputs() {
+      const cfg = currentConfig();
+      document.getElementById("serviceKeyInput").value = isPlaceholderKey(cfg.serviceKey) ? "" : cfg.serviceKey;
+      document.getElementById("siteNameInput").value = cfg.siteName;
+      document.getElementById("nxInput").value = cfg.nx;
+      document.getElementById("nyInput").value = cfg.ny;
+    }
+
+    initInputs();
+    loadWeather();
+    setInterval(loadWeather, CONFIG.AUTO_REFRESH_MINUTES * 60 * 1000);
+  </script>
+</body>
+</html>
