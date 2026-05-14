@@ -83,6 +83,7 @@
       font-size: 13px;
       line-height: 1.5;
     }
+
     .health-card {
       margin: 0 0 16px;
       padding: 20px;
@@ -91,59 +92,59 @@
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
-      gap: 14px;
+      gap: 12px;
       margin-bottom: 14px;
     }
-    .health-label {
-      color: var(--muted);
-      font-size: 14px;
-      font-weight: 800;
-    }
     .health-title {
-      margin: 6px 0 0;
-      font-size: clamp(24px, 4.4vw, 38px);
+      margin: 0;
+      font-size: clamp(20px, 3.4vw, 30px);
       font-weight: 900;
-      letter-spacing: -0.04em;
+      letter-spacing: -0.03em;
     }
-    .health-badge {
-      border-radius: 999px;
-      padding: 8px 12px;
-      font-size: 13px;
-      font-weight: 850;
-      background: #eff6ff;
-      color: #1d4ed8;
-      white-space: nowrap;
-    }
-    .health-actions {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 10px;
-    }
-    .health-action {
-      border: 1px solid var(--line);
-      background: #f8fafc;
-      border-radius: 18px;
-      padding: 14px 14px;
-      min-height: 76px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      line-height: 1.55;
-      font-weight: 800;
-      color: #1f2937;
-    }
-    .health-num {
-      flex: 0 0 auto;
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
+    .health-level {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      background: #dbeafe;
-      color: #1d4ed8;
+      min-width: 92px;
+      border-radius: 999px;
+      padding: 9px 14px;
+      font-size: 16px;
       font-weight: 900;
-      font-size: 14px;
+      color: #fff;
+      background: #2563eb;
+      white-space: nowrap;
+    }
+    .health-items {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .health-item {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 14px 14px;
+      background: #f8fafc;
+      font-size: clamp(15px, 2.4vw, 18px);
+      font-weight: 800;
+      line-height: 1.5;
+    }
+    .health-item span:first-child {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      margin-right: 6px;
+      border-radius: 999px;
+      background: #e0f2fe;
+      color: #075985;
+      font-weight: 900;
+      font-size: 13px;
+      vertical-align: top;
+    }
+    .health-item span:last-child {
+      display: inline;
     }
     .chart-card {
       padding: 18px 18px 10px;
@@ -254,13 +255,13 @@
     button.secondary { background: #475569; }
     @media (max-width: 860px) {
       .status-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-      .health-actions { grid-template-columns: 1fr; }
+      .health-items { grid-template-columns: 1fr; }
       .setup-grid { grid-template-columns: 1fr; }
     }
     @media (max-width: 520px) {
       .status-row { grid-template-columns: 1fr; }
       .health-head { display: block; }
-      .health-badge { display: inline-flex; margin-top: 10px; }
+      .health-level { margin-top: 10px; }
       .hero { padding: 22px 18px; }
       .card { padding: 16px; }
       .chart-head { display: block; }
@@ -294,18 +295,15 @@
       </article>
     </section>
 
-    <section class="card health-card" id="healthCard">
+    <section class="card health-card">
       <div class="health-head">
-        <div>
-          <div class="health-label">근로자 건강관리 사항</div>
-          <h2 class="health-title" id="healthLevel">계산 대기</h2>
-        </div>
-        <div class="health-badge" id="healthRange">체감온도 산출 대기</div>
+        <h2 class="health-title">근로자 건강관리 사항</h2>
+        <div class="health-level" id="healthLevel">계산 대기</div>
       </div>
-      <div class="health-actions" id="healthActions">
-        <div class="health-action"><span class="health-num">1</span><span>작업 전 건강상태 확인</span></div>
-        <div class="health-action"><span class="health-num">2</span><span>물 비치 및 수시 섭취 안내</span></div>
-        <div class="health-action"><span class="health-num">3</span><span>온열질환 증상 교육</span></div>
+      <div class="health-items">
+        <div class="health-item"><span>1</span><span id="healthItem1">체감온도 산출 대기</span></div>
+        <div class="health-item"><span>2</span><span id="healthItem2">근로자 상태 확인</span></div>
+        <div class="health-item"><span>3</span><span id="healthItem3">수분섭취 안내</span></div>
       </div>
     </section>
 
@@ -481,72 +479,58 @@
       return round1(feel);
     }
 
-    function heatHealthGuide(feels) {
+    function healthGuide(feels) {
       if (!Number.isFinite(feels)) {
         return {
           level: "계산 대기",
-          range: "체감온도 산출 대기",
           color: "#64748b",
-          actions: ["작업 전 건강상태 확인", "물 비치 및 수시 섭취 안내", "온열질환 증상 교육"]
+          items: ["체감온도 산출 대기", "근로자 상태 확인", "수분섭취 안내"]
         };
       }
       if (feels >= 38) {
         return {
           level: "위험",
-          range: "38℃ 이상",
           color: "#dc2626",
-          actions: ["긴급작업 외 옥외작업 중지", "열사병 의심 시 즉시 119 신고", "냉방휴식·냉각조치·보냉장구 지급"]
+          items: ["긴급작업 외 옥외작업 중지", "열사병 의심 시 즉시 119 신고", "냉방휴식·냉각조치·보냉장구 지급"]
         };
       }
       if (feels >= 35) {
         return {
           level: "경고",
-          range: "35℃ 이상 ~ 38℃ 미만",
           color: "#ea580c",
-          actions: ["1시간마다 15분 수준 휴식 권고", "14~17시 옥외작업 최소화·중지 검토", "민감군·고강도 작업자 건강상태 집중 확인"]
+          items: ["1시간마다 15분 수준 휴식 권고", "14~17시 옥외작업 최소화·중지 검토", "민감군·고강도 작업자 건강상태 집중 확인"]
         };
       }
       if (feels >= 33) {
         return {
           level: "주의",
-          range: "33℃ 이상 ~ 35℃ 미만",
           color: "#f59e0b",
-          actions: ["2시간마다 20분 이상 휴식", "작업시간대 조정", "작업자 이상증상 수시 확인"]
+          items: ["2시간마다 20분 이상 휴식", "작업시간대 조정", "작업자 이상증상 수시 확인"]
         };
       }
       if (feels >= 31) {
         return {
           level: "관심",
-          range: "31℃ 이상 ~ 33℃ 미만",
           color: "#16a34a",
-          actions: ["시원한 물·그늘·휴식공간 확보", "작업 중 수분섭취 지도", "온열질환 민감군 확인"]
+          items: ["시원한 물·그늘·휴식공간 확보", "작업 중 수분섭취 지도", "온열질환 민감군 확인"]
         };
       }
       return {
         level: "일반관리",
-        range: "31℃ 미만",
         color: "#2563eb",
-        actions: ["작업 전 건강상태 확인", "물 비치 및 수시 섭취 안내", "온열질환 증상 교육"]
+        items: ["작업 전 건강상태 확인", "물 비치 및 수시 섭취 안내", "온열질환 증상 교육"]
       };
     }
 
     function updateHealthGuide(feels) {
-      const guide = heatHealthGuide(feels);
+      const guide = healthGuide(feels);
       const levelEl = document.getElementById("healthLevel");
-      const rangeEl = document.getElementById("healthRange");
-      const actionsEl = document.getElementById("healthActions");
-
+      if (!levelEl) return;
       levelEl.textContent = guide.level;
-      levelEl.style.color = guide.color;
-      rangeEl.textContent = Number.isFinite(feels) ? `체감온도 ${feels}℃ · ${guide.range}` : guide.range;
-      rangeEl.style.color = guide.color;
-
-      actionsEl.innerHTML = guide.actions.map((text, idx) => `
-        <div class="health-action">
-          <span class="health-num">${idx + 1}</span>
-          <span>${text}</span>
-        </div>
-      `).join("");
+      levelEl.style.background = guide.color;
+      document.getElementById("healthItem1").textContent = guide.items[0];
+      document.getElementById("healthItem2").textContent = guide.items[1];
+      document.getElementById("healthItem3").textContent = guide.items[2];
     }
 
     function updateCards(nowRow) {
